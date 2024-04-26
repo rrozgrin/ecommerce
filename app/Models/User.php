@@ -18,6 +18,7 @@ class User extends Authenticatable implements JWTSubject
         'name',
         'email',
         'password',
+        'is_admin',
     ];
     /**
      * The attributes that should be hidden for arrays.
@@ -43,8 +44,6 @@ class User extends Authenticatable implements JWTSubject
      * @return mixed
      */
     public function getJWTIdentifier() {
-        $chave = $this->getKey();
-        dd($chave);
         return $this->getKey();
     }
     /**
