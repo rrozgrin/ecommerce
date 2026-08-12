@@ -35,7 +35,7 @@ class OrderController extends Controller
 
     public function show($id)
     {
-        $order = Order::fing($id);
+        $order = Order::find($id);
         return response()->json($order, 200);
     }
 

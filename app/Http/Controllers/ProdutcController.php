@@ -28,14 +28,14 @@ class ProdutcController extends Controller
 
     public function store(Request $request)
     {
-        Validator::make($request->all(), [
+        $request->validate([
             'name' => 'required',
             'price' => 'required|numeric',
             'category_id' => 'required|numeric',
             'brand_id' => 'required|numeric',
-            'discount' => 'numeric',
+            'discount' => 'nullable|numeric',
             'amount' => 'required|numeric',
-            'image' => 'required',
+            'image' => 'required|image',
         ]);
 
         $product = new Product();
@@ -46,18 +46,10 @@ class ProdutcController extends Controller
         $product->discount = $request->discount;
         $product->amount = $request->amount;
         if ($request->hasFile('image')) {
-            $path = 'assets/uploads/product' . $product->image;
-            if (File::exists($path)) {
-                File::delete($path);
-            }
             $file = $request->file('image');
             $ext = $file->getClientOriginalExtension();
             $filename = time() . '.' . $ext;
-            try {
-                $file->move('assets/uploads/product', $filename);
-            } catch (FileException $e) {
-                dd($e);
-            }
+            $file->move('public/assets/uploads/product', $filename);
             $product->image = $filename;
         }
         $product->save();
@@ -67,14 +59,14 @@ class ProdutcController extends Controller
 
     public function update_product($id, Request $request)
     {
-        Validator::make($request->all(), [
+        $request->validate([
             'name' => 'required',
             'price' => 'required|numeric',
             'category_id' => 'required|numeric',
             'brand_id' => 'required|numeric',
-            'discount' => 'required|numeric',
+            'discount' => 'nullable|numeric',
             'amount' => 'required|numeric',
-            'image' => 'required',
+            'image' => 'nullable|image',
         ]);
 
         $product = Product::find($id);
@@ -86,20 +78,16 @@ class ProdutcController extends Controller
             $product->discount = $request->discount;
             $product->amount = $request->amount;
             if ($request->hasFile('image')) {
-                $path = 'assets/uploads/product' . $product->image;
-                if (File::exist($path)) {
+                $path = 'public/assets/uploads/product/' . $product->image;
+                if (File::exists($path)) {
                     File::delete($path);
                 }
                 $file = $request->file('image');
                 $ext = $file->getClientOriginalExtension();
                 $filename = time() . '.' . $ext;
-                try {
-                    $file->move('assets/uploads/product', $filename);
-                } catch (FileException $e) {
-                    dd($e);
-                }
+                $file->move('public/assets/uploads/product', $filename);
+                $product->image = $filename;
             }
-            $product->image = $filename;
             $product->update();
 
             return response()->json('Produto atualizado com sucesso', 201);

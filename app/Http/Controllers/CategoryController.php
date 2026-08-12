@@ -35,7 +35,7 @@ class CategoryController extends Controller
     {
         try {
             $validated = $request->validate([
-                'name' => 'required|unique:brands,name'
+                'name' => 'required|unique:categories,name'
             ]);
             $category = new Category();
             $category->name = $request->name;
@@ -72,12 +72,12 @@ class CategoryController extends Controller
     {
         try {
             $validated = $request->validate([
-                'name' => 'required|unique:brands,name',
-                'image' => 'required|image'
+                'name' => 'required|unique:categories,name',
+                'image' => 'nullable|image'
             ]);
             $category = Category::find($id);
             if ($request->hasFile('image')) {
-                $path = 'assets/uploads/category' . $category->image;
+                $path = 'public/assets/uploads/category/' . $category->image;
                 if (File::exists($path)) {
                     File::delete($path);
                 }
@@ -86,7 +86,7 @@ class CategoryController extends Controller
                 $filename = time() . '.' . $ext;
 
                 try {
-                    $file->move('assets/uploads/category', $filename);
+                    $file->move('public/assets/uploads/category', $filename);
                 } catch (Exception $e) {
                     dd($e);
                 }
@@ -105,7 +105,7 @@ class CategoryController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy_category(Category $id)
+    public function delete_category($id)
     {
         $category = Category::find($id);
         if ($category) {

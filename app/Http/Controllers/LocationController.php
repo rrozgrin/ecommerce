@@ -53,7 +53,9 @@ class LocationController extends Controller
 
     public function delete_location($id)
     {
-        $location = Location::find();
+        $location = Location::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->first();
         if($location){
             $location->delete();
             return response()->json('Localização excluída com sucesso');
@@ -62,4 +64,3 @@ class LocationController extends Controller
         
     }
 }
-
