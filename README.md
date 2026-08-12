@@ -1,66 +1,129 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# E-commerce API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+API REST de e-commerce desenvolvida para portfólio. O projeto gerencia catálogo, marcas, categorias, endereços e pedidos, com autenticação JWT, permissões administrativas, controle de estoque e upload de imagens.
 
-## About Laravel
+## Tecnologias
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- PHP 8.1+
+- Laravel 10
+- MySQL 8
+- JWT (`tymon/jwt-auth`)
+- Docker Compose para o banco de testes
+- Postman
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Principais recursos
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- Cadastro e autenticação de usuários via JWT.
+- Catálogo público de produtos.
+- Gestão administrativa de produtos, marcas e categorias.
+- Upload de imagens no disco público do Laravel.
+- Endereços vinculados ao usuário autenticado.
+- Criação de pedidos com cálculo de preço no servidor, validação de estoque e transação de banco.
+- Policies para limitar operações ao proprietário do recurso ou a administradores.
+- Respostas JSON padronizadas com API Resources e `ApiResponse`.
 
-## Learning Laravel
+## Instalação
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Instale as dependências e crie o arquivo de ambiente:
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan jwt:secret
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Configure no `.env` uma base MySQL local para desenvolvimento:
 
-## Laravel Sponsors
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=ecommerce
+DB_USERNAME=root
+DB_PASSWORD=
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Depois execute as migrations, o seeder e o link público para arquivos enviados:
 
-### Premium Partners
+```bash
+php artisan migrate --seed
+php artisan storage:link
+php artisan serve
+```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+## Usuário administrador de demonstração
 
-## Contributing
+O `DatabaseSeeder` cria o usuário abaixo quando executado:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+| Campo | Valor |
+| --- | --- |
+| E-mail | `admin@ecommerce.test` |
+| Senha | `password` |
 
-## Code of Conduct
+Essas credenciais são destinadas apenas ao ambiente local/de demonstração.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Autenticação JWT
 
-## Security Vulnerabilities
+Faça login em `POST /api/auth/login` com e-mail e senha. A resposta contém o `access_token`.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Envie esse token nas rotas protegidas:
 
-## License
+```http
+Authorization: Bearer {access_token}
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Rotas públicas:
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/produtos`
+- `GET /api/produtos/{product}`
+
+As demais rotas exigem autenticação. Ações de catálogo administrativo e gestão de pedidos são avaliadas pelas Policies: apenas administradores podem executar operações administrativas; endereços e pedidos são acessíveis somente pelo proprietário, salvo permissões administrativas específicas.
+
+## Regras de negócio do pedido
+
+- O cliente envia somente produtos, quantidades, endereço e data de entrega.
+- Preços e total são calculados no backend a partir do catálogo atual.
+- O estoque é verificado e bloqueado durante a criação do pedido.
+- Pedido, itens e baixa de estoque são executados em uma única transação.
+- Uma solicitação com estoque insuficiente é rejeitada sem criar pedido ou alterar inventário.
+
+## Testes
+
+O projeto usa um MySQL isolado na porta `3307` para que a suíte nunca utilize o banco de desenvolvimento.
+
+```bash
+docker compose -f docker-compose.testing.yml up -d --wait
+php artisan test
+```
+
+Para recriar o banco de demonstração usado nos testes:
+
+```bash
+php artisan migrate:fresh --seed --env=testing
+```
+
+A cobertura atual inclui autenticação, autorização administrativa, Policies, catálogo, criação de produto com imagem, criação de pedido, cálculo de total e estoque insuficiente.
+
+## Postman
+
+Importe a collection [Ecommerce.postman_collection.json](postman/Ecommerce.postman_collection.json) no Postman.
+
+A collection contém as rotas atuais e variáveis para URL, token JWT e IDs. Execute **Login e salvar token** antes de testar endpoints protegidos. Para criar ou alterar produtos, selecione um arquivo no campo `image` da requisição multipart.
+
+## Estrutura da API
+
+| Recurso | Rotas principais |
+| --- | --- |
+| Autenticação | `/api/auth/*` |
+| Produtos | `/api/produtos` |
+| Marcas | `/api/marcas` |
+| Categorias | `/api/categorias` |
+| Endereços | `/api/enderecos` |
+| Compras | `/api/compras` |
+
+## Licença
+
+Projeto desenvolvido para fins de portfólio.
