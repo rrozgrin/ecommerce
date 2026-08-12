@@ -6,9 +6,10 @@ use App\Models\Location;
 use App\Models\Order;
 use App\Models\OrderItems;
 use App\Models\Product;
-use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 
 class OrderController extends Controller
@@ -41,38 +42,65 @@ class OrderController extends Controller
 
     public function store(Request $request)
     {
-        try {
-            $location = Location::where('user_id', Auth::id())->first();
-            // dd($location);
-            $request->validate([
-                'order_items' => 'required',
-                'total_price' => 'required',
-                'quantity' => 'required',
-                'date_of_delivery' => 'required',
+        $validated = $request->validate([
+            'location_id' => 'required|integer|exists:locations,id',
+            'date_of_delivery' => 'required|date',
+            'order_items' => 'required|array|min:1',
+            'order_items.*.product_id' => 'required|integer|distinct|exists:products,id',
+            'order_items.*.quantity' => 'required|integer|min:1',
+        ]);
+
+        $location = Location::where('id', $validated['location_id'])
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+
+        $order = DB::transaction(function () use ($validated, $location) {
+            $productIds = collect($validated['order_items'])->pluck('product_id');
+            $products = Product::whereIn('id', $productIds)
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            $totalPrice = 0;
+
+            foreach ($validated['order_items'] as $orderItem) {
+                $product = $products->get($orderItem['product_id']);
+
+                if (! $product || $product->amount < $orderItem['quantity']) {
+                    throw ValidationException::withMessages([
+                        'order_items' => ['Estoque insuficiente para um dos produtos selecionados.'],
+                    ]);
+                }
+
+                $unitPrice = max(0, (float) $product->price - (float) ($product->discount ?? 0));
+                $totalPrice += $unitPrice * $orderItem['quantity'];
+            }
+
+            $order = Order::create([
+                'user_id' => Auth::id(),
+                'location_id' => $location->id,
+                'total_price' => $totalPrice,
+                'date_of_delivery' => $validated['date_of_delivery'],
             ]);
 
-            $order = new Order();
-            $order->user_id = Auth::id();
-            $order->location_id = $location->id;
-            $order->total_price = $request->total_price;
-            $order->date_of_delivery = $request->date_of_delivery;
-            $order->save();
+            foreach ($validated['order_items'] as $orderItem) {
+                $product = $products->get($orderItem['product_id']);
+                $unitPrice = max(0, (float) $product->price - (float) ($product->discount ?? 0));
 
-            foreach ($request->order_items as $order_items) {
-                $items = new OrderItems();
-                $items->order_id = $order->id;
-                $items->price = $order_items['price'];
-                $items->product_id = $order_items['product_id'];
-                $items->quantity = $order_items['quantity'];
-                $items->save();
-                $product = Product::where('id', $order_items['product_id'])->first();
-                $product->amount -= $order_items['quantity'];
-                $product->save();
+                OrderItems::create([
+                    'order_id' => $order->id,
+                    'product_id' => $product->id,
+                    'quantity' => $orderItem['quantity'],
+                    'price' => $unitPrice,
+                ]);
+
+                $product->decrement('amount', $orderItem['quantity']);
             }
-            return response()->json('Compra adicionada com sucesso', 201);
-        } catch (Exception $e) {
-            return response()->json($e);
-        }
+
+            return $order->load('items.product');
+        });
+
+        return response()->json($order, 201);
     }
 
     public function get_order_items($id)
