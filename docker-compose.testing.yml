@@ -1,0 +1,15 @@
+services:
+  mysql-testing:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: ecommerce_testing
+      MYSQL_USER: ecommerce_test
+      MYSQL_PASSWORD: ecommerce_test_password
+      MYSQL_ROOT_PASSWORD: ecommerce_test_root_password
+    ports:
+      - "3307:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pecommerce_test_root_password"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
