@@ -12,6 +12,8 @@ class LocationController extends Controller
 {
     public function store(StoreLocationRequest $request)
     {
+        $this->authorize('create', Location::class);
+
         $location = Location::create($request->validated() + ['user_id' => Auth::id()]);
 
         return ApiResponse::created(new LocationResource($location), 'Endereço adicionado com sucesso.');
@@ -19,9 +21,7 @@ class LocationController extends Controller
 
     public function update(UpdateLocationRequest $request, Location $location)
     {
-        $location = Location::where('id', $location->id)
-            ->where('user_id', Auth::id())
-            ->firstOrFail();
+        $this->authorize('update', $location);
 
         $location->update($request->validated());
 
@@ -31,9 +31,7 @@ class LocationController extends Controller
 
     public function destroy(Location $location)
     {
-        $location = Location::where('id', $location->id)
-            ->where('user_id', Auth::id())
-            ->firstOrFail();
+        $this->authorize('delete', $location);
 
         $location->delete();
 

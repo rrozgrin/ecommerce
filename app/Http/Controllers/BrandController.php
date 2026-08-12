@@ -15,6 +15,8 @@ class BrandController extends Controller
      */
     public function index()
     {
+        $this->authorize('viewAny', Brand::class);
+
         return ApiResponse::success(BrandResource::collection(Brand::paginate(10)));
     }
 
@@ -31,6 +33,8 @@ class BrandController extends Controller
      */
     public function store(StoreBrandRequest $request)
     {
+        $this->authorize('create', Brand::class);
+
         $brand = Brand::create($request->validated());
 
         return ApiResponse::created(new BrandResource($brand), 'Marca adicionada com sucesso.');
@@ -41,6 +45,8 @@ class BrandController extends Controller
      */
     public function show(Brand $brand)
     {
+        $this->authorize('view', $brand);
+
         return ApiResponse::success(new BrandResource($brand));
     }
     /**
@@ -56,6 +62,8 @@ class BrandController extends Controller
      */
     public function update(UpdateBrandRequest $request, Brand $brand)
     {
+        $this->authorize('update', $brand);
+
         $brand->update($request->validated());
 
         return ApiResponse::success(new BrandResource($brand), 'Marca atualizada com sucesso.');
@@ -66,6 +74,8 @@ class BrandController extends Controller
      */
     public function destroy(Brand $brand)
     {
+        $this->authorize('delete', $brand);
+
         $brand->delete();
 
         return ApiResponse::noContent();

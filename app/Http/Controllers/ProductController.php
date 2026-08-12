@@ -7,7 +7,7 @@ use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Http\Resources\ProductResource;
 use App\Support\ApiResponse;
-use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -23,13 +23,11 @@ class ProductController extends Controller
 
     public function store(StoreProductRequest $request)
     {
+        $this->authorize('create', Product::class);
+
         $product = new Product($request->safe()->except('image'));
         if ($request->hasFile('image')) {
-            $file = $request->file('image');
-            $ext = $file->getClientOriginalExtension();
-            $filename = time() . '.' . $ext;
-            $file->move('public/assets/uploads/product', $filename);
-            $product->image = $filename;
+            $product->image = $request->file('image')->store('products', 'public');
         }
         $product->save();
 
@@ -41,17 +39,14 @@ class ProductController extends Controller
 
     public function update(UpdateProductRequest $request, Product $product)
     {
+        $this->authorize('update', $product);
+
         $product->fill($request->safe()->except('image'));
         if ($request->hasFile('image')) {
-            $path = 'public/assets/uploads/product/' . $product->image;
-            if (File::exists($path)) {
-                File::delete($path);
+            if ($product->image) {
+                Storage::disk('public')->delete($product->image);
             }
-            $file = $request->file('image');
-            $ext = $file->getClientOriginalExtension();
-            $filename = time() . '.' . $ext;
-            $file->move('public/assets/uploads/product', $filename);
-            $product->image = $filename;
+            $product->image = $request->file('image')->store('products', 'public');
         }
         $product->update();
 
@@ -63,6 +58,12 @@ class ProductController extends Controller
 
     public function destroy(Product $product)
     {
+        $this->authorize('delete', $product);
+
+        if ($product->image) {
+            Storage::disk('public')->delete($product->image);
+        }
+
         $product->delete();
 
         return ApiResponse::noContent();

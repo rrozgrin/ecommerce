@@ -45,23 +45,21 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/', 'store');
     });
 
-    Route::middleware('is_admin')->group(function () {
-        Route::apiResource('marcas', BrandController::class)
-            ->parameters(['marcas' => 'brand'])
-            ->only(['index', 'show', 'store', 'update', 'destroy']);
+    Route::apiResource('marcas', BrandController::class)
+        ->parameters(['marcas' => 'brand'])
+        ->only(['index', 'show', 'store', 'update', 'destroy']);
 
-        Route::apiResource('categorias', CategoryController::class)
-            ->parameters(['categorias' => 'category'])
-            ->only(['index', 'show', 'store', 'update', 'destroy']);
+    Route::apiResource('categorias', CategoryController::class)
+        ->parameters(['categorias' => 'category'])
+        ->only(['index', 'show', 'store', 'update', 'destroy']);
 
-        Route::apiResource('produtos', ProductController::class)
-            ->parameters(['produtos' => 'product'])
-            ->only(['store', 'update', 'destroy']);
+    Route::apiResource('produtos', ProductController::class)
+        ->parameters(['produtos' => 'product'])
+        ->only(['store', 'update', 'destroy']);
 
-        Route::prefix('compras')->controller(OrderController::class)->group(function () {
-            Route::get('/usuarios/{userId}', 'getUserOrders');
-            Route::get('/{order}/itens', 'getOrderItems');
-            Route::patch('/{order}/status', 'updateStatus');
-        });
+    Route::prefix('compras')->controller(OrderController::class)->group(function () {
+        Route::get('/usuarios/{userId}', 'getUserOrders');
+        Route::get('/{order}/itens', 'getOrderItems');
+        Route::patch('/{order}/status', 'updateStatus');
     });
 });

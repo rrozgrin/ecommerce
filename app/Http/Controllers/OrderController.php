@@ -16,9 +16,7 @@ class OrderController extends Controller
 {
     public function index()
     {
-        if (!auth()->check()) {
-            return response()->json('Usuário não autenticado', 401);
-        }
+        $this->authorize('viewAny', Order::class);
 
         $orders = Order::where('user_id', Auth::id())
             ->with(['items.product', 'location'])
@@ -27,18 +25,19 @@ class OrderController extends Controller
         return ApiResponse::success(OrderResource::collection($orders));
     }
 
-    public function show($id)
+    public function show(Order $order)
     {
-        $order = Order::where('id', $id)
-            ->where('user_id', Auth::id())
-            ->with('items.product', 'location')
-            ->firstOrFail();
+        $this->authorize('view', $order);
+
+        $order->load(['items.product', 'location']);
 
         return ApiResponse::success(new OrderResource($order));
     }
 
     public function store(StoreOrderRequest $request, OrderService $orderService)
     {
+        $this->authorize('create', Order::class);
+
         $order = $orderService->create(Auth::id(), $request->validated());
 
         return ApiResponse::created(new OrderResource($order), 'Compra adicionada com sucesso.');
@@ -46,11 +45,15 @@ class OrderController extends Controller
 
     public function getOrderItems(Order $order)
     {
+        $this->authorize('viewItems', $order);
+
         return ApiResponse::success(OrderItemResource::collection($order->items()->with('product')->get()));
     }
 
     public function getUserOrders($userId)
     {
+        $this->authorize('viewUserOrders', Order::class);
+
         $orders = Order::with(['items.product', 'location'])->where('user_id', $userId)->get();
 
         return ApiResponse::success(OrderResource::collection($orders));
@@ -58,6 +61,8 @@ class OrderController extends Controller
 
     public function updateStatus(UpdateOrderStatusRequest $request, Order $order)
     {
+        $this->authorize('updateStatus', $order);
+
         $order->update($request->validated());
 
         return ApiResponse::success(

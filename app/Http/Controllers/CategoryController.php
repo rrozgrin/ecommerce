@@ -7,7 +7,7 @@ use App\Http\Requests\StoreCategoryRequest;
 use App\Http\Requests\UpdateCategoryRequest;
 use App\Http\Resources\CategoryResource;
 use App\Support\ApiResponse;
-use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 
 class CategoryController extends Controller
 {
@@ -16,6 +16,8 @@ class CategoryController extends Controller
      */
     public function index()
     {
+        $this->authorize('viewAny', Category::class);
+
         return ApiResponse::success(CategoryResource::collection(Category::paginate(10)));
     }
 
@@ -32,6 +34,8 @@ class CategoryController extends Controller
      */
     public function store(StoreCategoryRequest $request)
     {
+        $this->authorize('create', Category::class);
+
         $category = Category::create($request->validated());
 
         return ApiResponse::created(new CategoryResource($category), 'Categoria adicionada com sucesso.');
@@ -42,6 +46,8 @@ class CategoryController extends Controller
      */
     public function show(Category $category)
     {
+        $this->authorize('view', $category);
+
         return ApiResponse::success(new CategoryResource($category));
     }
     /**
@@ -57,15 +63,13 @@ class CategoryController extends Controller
      */
     public function update(UpdateCategoryRequest $request, Category $category)
     {
+        $this->authorize('update', $category);
+
         if ($request->hasFile('image')) {
-            $path = 'public/assets/uploads/category/' . $category->image;
-            if (File::exists($path)) {
-                File::delete($path);
+            if ($category->image) {
+                Storage::disk('public')->delete($category->image);
             }
-            $file = $request->file('image');
-            $filename = time() . '.' . $file->getClientOriginalExtension();
-            $file->move('public/assets/uploads/category', $filename);
-            $category->image = $filename;
+            $category->image = $request->file('image')->store('categories', 'public');
         }
 
         $category->name = $request->validated('name');
@@ -79,6 +83,12 @@ class CategoryController extends Controller
      */
     public function destroy(Category $category)
     {
+        $this->authorize('delete', $category);
+
+        if ($category->image) {
+            Storage::disk('public')->delete($category->image);
+        }
+
         $category->delete();
 
         return ApiResponse::noContent();
