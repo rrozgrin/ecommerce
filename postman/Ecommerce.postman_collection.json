@@ -1,0 +1,134 @@
+{
+  "info": {
+    "_postman_id": "e2a8d1c9-2a3d-4b98-96e3-7d10b5e17f51",
+    "name": "E-commerce API - Portfolio",
+    "description": "Collection para testar a API de e-commerce. Faça login com um usuário administrador antes de usar as rotas administrativas.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000" },
+    { "key": "access_token", "value": "" },
+    { "key": "user_email", "value": "admin@ecommerce.test" },
+    { "key": "user_password", "value": "password" },
+    { "key": "product_id", "value": "1" },
+    { "key": "brand_id", "value": "1" },
+    { "key": "category_id", "value": "1" },
+    { "key": "location_id", "value": "1" },
+    { "key": "order_id", "value": "1" },
+    { "key": "user_id", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Registrar usuário",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Novo Usuário\",\n  \"email\": \"novo.usuario@example.test\",\n  \"password\": \"password\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/api/auth/register"
+          }
+        },
+        {
+          "name": "Login e salvar token",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Login retornou token', function () {", "  pm.response.to.have.status(200);", "  const json = pm.response.json();", "  pm.expect(json.access_token).to.be.a('string');", "  pm.collectionVariables.set('access_token', json.access_token);", "});"] } }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"{{user_password}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/api/auth/login"
+          }
+        },
+        { "name": "Perfil autenticado", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/auth/user-profile" } },
+        {
+          "name": "Renovar token",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["if (pm.response.code === 200) {", "  pm.collectionVariables.set('access_token', pm.response.json().access_token);", "}"] } }],
+          "request": { "method": "POST", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/auth/refresh" }
+        },
+        { "name": "Logout", "request": { "method": "POST", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/auth/logout" } }
+      ]
+    },
+    {
+      "name": "Produtos",
+      "item": [
+        { "name": "Listar produtos", "request": { "auth": { "type": "noauth" }, "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/produtos" } },
+        { "name": "Exibir produto", "request": { "auth": { "type": "noauth" }, "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/produtos/{{product_id}}" } },
+        {
+          "name": "Criar produto (admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": { "mode": "formdata", "formdata": [
+              { "key": "name", "value": "Produto Postman", "type": "text" },
+              { "key": "price", "value": "99.90", "type": "text" },
+              { "key": "discount", "value": "10.00", "type": "text" },
+              { "key": "amount", "value": "10", "type": "text" },
+              { "key": "brand_id", "value": "{{brand_id}}", "type": "text" },
+              { "key": "category_id", "value": "{{category_id}}", "type": "text" },
+              { "key": "image", "type": "file", "src": "" }
+            ] },
+            "url": "{{base_url}}/api/produtos"
+          }
+        },
+        {
+          "name": "Atualizar produto (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": { "mode": "formdata", "formdata": [
+              { "key": "name", "value": "Produto Postman atualizado", "type": "text" },
+              { "key": "price", "value": "89.90", "type": "text" },
+              { "key": "discount", "value": "0", "type": "text" },
+              { "key": "amount", "value": "15", "type": "text" },
+              { "key": "brand_id", "value": "{{brand_id}}", "type": "text" },
+              { "key": "category_id", "value": "{{category_id}}", "type": "text" }
+            ] },
+            "url": "{{base_url}}/api/produtos/{{product_id}}"
+          }
+        },
+        { "name": "Excluir produto (admin)", "request": { "method": "DELETE", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/produtos/{{product_id}}" } }
+      ]
+    },
+    {
+      "name": "Marcas e categorias (admin)",
+      "item": [
+        { "name": "Listar marcas", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/marcas" } },
+        { "name": "Exibir marca", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/marcas/{{brand_id}}" } },
+        { "name": "Criar marca", "request": { "method": "POST", "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Marca Postman\"\n}", "options": { "raw": { "language": "json" } } }, "url": "{{base_url}}/api/marcas" } },
+        { "name": "Atualizar marca", "request": { "method": "PATCH", "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Marca Postman atualizada\"\n}", "options": { "raw": { "language": "json" } } }, "url": "{{base_url}}/api/marcas/{{brand_id}}" } },
+        { "name": "Excluir marca", "request": { "method": "DELETE", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/marcas/{{brand_id}}" } },
+        { "name": "Listar categorias", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/categorias" } },
+        { "name": "Exibir categoria", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/categorias/{{category_id}}" } },
+        { "name": "Criar categoria", "request": { "method": "POST", "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Categoria Postman\"\n}", "options": { "raw": { "language": "json" } } }, "url": "{{base_url}}/api/categorias" } },
+        { "name": "Atualizar categoria", "request": { "method": "PATCH", "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Categoria Postman atualizada\"\n}", "options": { "raw": { "language": "json" } } }, "url": "{{base_url}}/api/categorias/{{category_id}}" } },
+        { "name": "Excluir categoria", "request": { "method": "DELETE", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/categorias/{{category_id}}" } }
+      ]
+    },
+    {
+      "name": "Endereços",
+      "item": [
+        { "name": "Criar endereço", "request": { "method": "POST", "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"street\": \"Rua das Flores\",\n  \"building\": \"100\",\n  \"area\": \"Centro\"\n}", "options": { "raw": { "language": "json" } } }, "url": "{{base_url}}/api/enderecos" } },
+        { "name": "Atualizar endereço", "request": { "method": "PATCH", "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"street\": \"Rua das Palmeiras\",\n  \"building\": \"200\",\n  \"area\": \"Centro\"\n}", "options": { "raw": { "language": "json" } } }, "url": "{{base_url}}/api/enderecos/{{location_id}}" } },
+        { "name": "Excluir endereço", "request": { "method": "DELETE", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/enderecos/{{location_id}}" } }
+      ]
+    },
+    {
+      "name": "Compras",
+      "item": [
+        { "name": "Listar minhas compras", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/compras" } },
+        { "name": "Exibir compra", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/compras/{{order_id}}" } },
+        { "name": "Criar compra", "request": { "method": "POST", "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"location_id\": {{location_id}},\n  \"date_of_delivery\": \"2026-09-01\",\n  \"order_items\": [\n    {\n      \"product_id\": {{product_id}},\n      \"quantity\": 1\n    }\n  ]\n}", "options": { "raw": { "language": "json" } } }, "url": "{{base_url}}/api/compras" } },
+        { "name": "Compras de usuário (admin)", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/compras/usuarios/{{user_id}}" } },
+        { "name": "Itens da compra (admin)", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/compras/{{order_id}}/itens" } },
+        { "name": "Atualizar status (admin)", "request": { "method": "PATCH", "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"status\": \"Saiu para entrega\"\n}", "options": { "raw": { "language": "json" } } }, "url": "{{base_url}}/api/compras/{{order_id}}/status" } }
+      ]
+    }
+  ]
+}
