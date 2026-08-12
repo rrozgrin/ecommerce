@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Produtc;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\File;
@@ -12,7 +12,7 @@ class ProdutcController extends Controller
 {
     public function index()
     {
-        $products = Produtc::paginate(10);
+        $products = Product::paginate(10);
         if ($products) {
             return response()->json($products, 200);
         } else return response()->json('Produtos não encontrados');
@@ -20,7 +20,7 @@ class ProdutcController extends Controller
 
     public function show($id)
     {
-        $product = Produtc::find($id);
+        $product = Product::find($id);
         if ($product) {
             return response()->json($product, 200);
         } else return response()->json('Produto não encontrados');
@@ -38,7 +38,7 @@ class ProdutcController extends Controller
             'image' => 'required',
         ]);
 
-        $product = new Produtc();
+        $product = new Product();
         $product->name = $request->name;
         $product->price = $request->price;
         $product->category_id = $request->category_id;
@@ -77,7 +77,7 @@ class ProdutcController extends Controller
             'image' => 'required',
         ]);
 
-        $product = Produtc::find($id);
+        $product = Product::find($id);
         if ($product) {
             $product->name = $request->name;
             $product->price = $request->price;
@@ -108,7 +108,7 @@ class ProdutcController extends Controller
 
     public function delete_product($id)
     {
-        $product = Produtc::find($id);
+        $product = Product::find($id);
         if ($product) {
             $product->delete();
             return response()->json('Produto excluído com sucesso');

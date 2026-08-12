@@ -39,31 +39,37 @@ Route::group([
 //brand routes
 Route::group(['prefix' => 'marcas'], function ($routes) {
     Route::controller(BrandController::class)->group(function () {
-        Route::get('index', 'index')->middleware('is_admin');
-        Route::get('show/{id}', 'show')->middleware('is_admin');
-        Route::post('store', 'store')->middleware('is_admin');
-        Route::put('update_brand/{id}', 'update_brand')->middleware('is_admin');
-        Route::delete('delete_brand/{id}', 'delete_brand')->middleware('is_admin');
+        Route::middleware(['auth:api', 'is_admin'])->group(function () {
+            Route::get('index', 'index');
+            Route::get('show/{id}', 'show');
+            Route::post('store', 'store');
+            Route::put('update_brand/{id}', 'update_brand');
+            Route::delete('delete_brand/{id}', 'delete_brand');
+        });
     });
 });
 
 //categories routes
 Route::group(['prefix' => 'categorias'], function ($routes) {
     Route::controller(CategoryController::class)->group(function () {
-        Route::get('index', 'index')->middleware('is_admin');
-        Route::get('show/{id}', 'show')->middleware('is_admin');
-        Route::post('store', 'store')->middleware('is_admin');
-        Route::put('update_category/{id}', 'update_category')->middleware('is_admin');
-        Route::delete('delete_category/{id}', 'delete_category')->middleware('is_admin');
+        Route::middleware(['auth:api', 'is_admin'])->group(function () {
+            Route::get('index', 'index');
+            Route::get('show/{id}', 'show');
+            Route::post('store', 'store');
+            Route::put('update_category/{id}', 'update_category');
+            Route::delete('delete_category/{id}', 'delete_category');
+        });
     });
 });
 
 //locations routes
 Route::group(['prefix' => 'enderecos'], function ($routes) {
     Route::controller(LocationController::class)->group(function () {
-        Route::post('store', 'store'); 
-        Route::put('update_location/{id}', 'update_location');
-        Route::delete('delete_location/{id}', 'delete_location');
+        Route::middleware('auth:api')->group(function () {
+            Route::post('store', 'store');
+            Route::put('update_location/{id}', 'update_location');
+            Route::delete('delete_location/{id}', 'delete_location');
+        });
     });
 });
 
@@ -72,9 +78,11 @@ Route::group(['prefix' => 'produtos'], function ($routes) {
     Route::controller(ProdutcController::class)->group(function () {
         Route::get('index', 'index');
         Route::get('show/{id}', 'show');
-        Route::post('store', 'store')->middleware('is_admin');
-        Route::put('update_product/{id}', 'update_product')->middleware('is_admin');
-        Route::delete('delete_product/{id}', 'delete_product')->middleware('is_admin');
+        Route::middleware(['auth:api', 'is_admin'])->group(function () {
+            Route::post('store', 'store');
+            Route::put('update_product/{id}', 'update_product');
+            Route::delete('delete_product/{id}', 'delete_product');
+        });
     });
 });
 
@@ -82,11 +90,15 @@ Route::group(['prefix' => 'produtos'], function ($routes) {
 //order routes
 Route::group(['prefix' => 'compras'], function ($routes) {
     Route::controller(OrderController::class)->group(function () {
-        Route::get('index', 'index');
-        Route::get('show/{id}', 'show');
-        Route::post('store', 'store');
-        Route::get('get_order_items/{id}', 'get_order_items')->middleware('is_admin');
-        Route::get('get_user_orders/{id}', 'get_user_orders')->middleware('is_admin');
-        Route::post('change_order_status/{id}', 'change_order_status')->middleware('is_admin');
+        Route::middleware('auth:api')->group(function () {
+            Route::get('index', 'index');
+            Route::get('show/{id}', 'show');
+            Route::post('store', 'store');
+            Route::middleware('is_admin')->group(function () {
+                Route::get('get_order_items/{id}', 'get_order_items');
+                Route::get('get_user_orders/{id}', 'get_user_orders');
+                Route::post('change_order_status/{id}', 'change_order_status');
+            });
+        });
     });
 });

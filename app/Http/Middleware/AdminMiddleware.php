@@ -16,7 +16,7 @@ class AdminMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (Auth::user()->is_admin == 1) {
+        if (Auth::check() && Auth::user()->is_admin == 1) {
             return $next($request);
         } else return response()->json('Você não é administrador do sistema');
     }

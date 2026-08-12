@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Location;
 use App\Models\Order;
 use App\Models\OrderItems;
-use App\Models\Produtc;
+use App\Models\Product;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -26,7 +26,7 @@ class OrderController extends Controller
         }
         foreach ($orders as $order) {
             foreach ($order->items as $order_items) {
-                $product = Produtc::where('id', $order_items->product_id)->pluck('name');
+                $product = Product::where('id', $order_items->product_id)->pluck('name');
                 $order_items->product_name = $product['0'];
             }
         }
@@ -65,7 +65,7 @@ class OrderController extends Controller
                 $items->product_id = $order_items['product_id'];
                 $items->quantity = $order_items['quantity'];
                 $items->save();
-                $product = Produtc::where('id', $order_items['product_id'])->first();
+                $product = Product::where('id', $order_items['product_id'])->first();
                 $product->amount -= $order_items['quantity'];
                 $product->save();
             }
@@ -80,7 +80,7 @@ class OrderController extends Controller
         $order_items = OrderItems::where('order_id', $id)->get();
         if ($order_items) {
             foreach ($order_items as $order_item) {
-                $product = Produtc::where('id', $order_item->product_id)->pluck('name');
+                $product = Product::where('id', $order_item->product_id)->pluck('name');
                 $order_item->product_name = $product['0'];
             }
             return response()->json($order_items);
@@ -94,7 +94,7 @@ class OrderController extends Controller
         if ($orders) {
             foreach ($orders as $order) {
                 foreach ($order->items as $order_items){
-                    $product = Produtc::where('id', $order_items->product_id)->pluck('name');
+                    $product = Product::where('id', $order_items->product_id)->pluck('name');
                     $order_items->product_name = $product['0'];
                 }
 
