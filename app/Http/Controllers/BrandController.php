@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Brand;
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use App\Http\Requests\StoreBrandRequest;
+use App\Http\Requests\UpdateBrandRequest;
+use App\Http\Resources\BrandResource;
+use App\Support\ApiResponse;
 
 class BrandController extends Controller
 {
@@ -13,8 +15,7 @@ class BrandController extends Controller
      */
     public function index()
     {
-        $brands = Brand::paginate(10);
-        return response()->json($brands, 200);
+        return ApiResponse::success(BrandResource::collection(Brand::paginate(10)));
     }
 
     /**
@@ -28,15 +29,11 @@ class BrandController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreBrandRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|unique:brands,name',
-        ]);
+        $brand = Brand::create($request->validated());
 
-        Brand::create($validated);
-
-        return response()->json('Marca adicionada com sucesso', 201);
+        return ApiResponse::created(new BrandResource($brand), 'Marca adicionada com sucesso.');
     }
 
     /**
@@ -44,7 +41,7 @@ class BrandController extends Controller
      */
     public function show(Brand $brand)
     {
-        return response()->json($brand, 200);
+        return ApiResponse::success(new BrandResource($brand));
     }
     /**
      * Show the form for editing the specified resource.
@@ -57,15 +54,11 @@ class BrandController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Brand $brand)
+    public function update(UpdateBrandRequest $request, Brand $brand)
     {
-        $validated = $request->validate([
-            'name' => ['required', Rule::unique('brands', 'name')->ignore($brand)],
-        ]);
+        $brand->update($request->validated());
 
-        $brand->update($validated);
-
-        return response()->json('Marca atualizada com sucesso');
+        return ApiResponse::success(new BrandResource($brand), 'Marca atualizada com sucesso.');
     }
 
     /**
@@ -75,6 +68,6 @@ class BrandController extends Controller
     {
         $brand->delete();
 
-        return response()->json('Marca excluída com sucesso');
+        return ApiResponse::noContent();
     }
 }

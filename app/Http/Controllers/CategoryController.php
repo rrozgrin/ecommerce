@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Http\Requests\StoreCategoryRequest;
+use App\Http\Requests\UpdateCategoryRequest;
+use App\Http\Resources\CategoryResource;
+use App\Support\ApiResponse;
 use Illuminate\Support\Facades\File;
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class CategoryController extends Controller
 {
@@ -14,8 +16,7 @@ class CategoryController extends Controller
      */
     public function index()
     {
-        $categories = Category::paginate(10);
-        return response()->json($categories, 200);
+        return ApiResponse::success(CategoryResource::collection(Category::paginate(10)));
     }
 
     /**
@@ -29,15 +30,11 @@ class CategoryController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreCategoryRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|unique:categories,name',
-        ]);
+        $category = Category::create($request->validated());
 
-        Category::create($validated);
-
-        return response()->json('Categoria adicionada com sucesso', 201);
+        return ApiResponse::created(new CategoryResource($category), 'Categoria adicionada com sucesso.');
     }
 
     /**
@@ -45,7 +42,7 @@ class CategoryController extends Controller
      */
     public function show(Category $category)
     {
-        return response()->json($category, 200);
+        return ApiResponse::success(new CategoryResource($category));
     }
     /**
      * Show the form for editing the specified resource.
@@ -58,13 +55,8 @@ class CategoryController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Category $category)
+    public function update(UpdateCategoryRequest $request, Category $category)
     {
-        $validated = $request->validate([
-            'name' => ['required', Rule::unique('categories', 'name')->ignore($category)],
-            'image' => 'nullable|image',
-        ]);
-
         if ($request->hasFile('image')) {
             $path = 'public/assets/uploads/category/' . $category->image;
             if (File::exists($path)) {
@@ -76,10 +68,10 @@ class CategoryController extends Controller
             $category->image = $filename;
         }
 
-        $category->name = $validated['name'];
+        $category->name = $request->validated('name');
         $category->update();
 
-        return response()->json('Categoria atualizada com sucesso');
+        return ApiResponse::success(new CategoryResource($category), 'Categoria atualizada com sucesso.');
     }
 
     /**
@@ -89,6 +81,6 @@ class CategoryController extends Controller
     {
         $category->delete();
 
-        return response()->json('Categoria excluída com sucesso');
+        return ApiResponse::noContent();
     }
 }

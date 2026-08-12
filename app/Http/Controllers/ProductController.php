@@ -3,43 +3,27 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
-use Illuminate\Http\Request;
+use App\Http\Requests\StoreProductRequest;
+use App\Http\Requests\UpdateProductRequest;
+use App\Http\Resources\ProductResource;
+use App\Support\ApiResponse;
 use Illuminate\Support\Facades\File;
 
 class ProductController extends Controller
 {
     public function index()
     {
-        $products = Product::paginate(10);
-        if ($products) {
-            return response()->json($products, 200);
-        } else return response()->json('Produtos não encontrados');
+        return ApiResponse::success(ProductResource::collection(Product::with(['category', 'brand'])->paginate(10)));
     }
 
     public function show(Product $product)
     {
-        return response()->json($product, 200);
+        return ApiResponse::success(new ProductResource($product->load(['category', 'brand'])));
     }
 
-    public function store(Request $request)
+    public function store(StoreProductRequest $request)
     {
-        $request->validate([
-            'name' => 'required',
-            'price' => 'required|numeric',
-            'category_id' => 'required|numeric',
-            'brand_id' => 'required|numeric',
-            'discount' => 'nullable|numeric',
-            'amount' => 'required|numeric',
-            'image' => 'required|image',
-        ]);
-
-        $product = new Product();
-        $product->name = $request->name;
-        $product->price = $request->price;
-        $product->category_id = $request->category_id;
-        $product->brand_id = $request->brand_id;
-        $product->discount = $request->discount;
-        $product->amount = $request->amount;
+        $product = new Product($request->safe()->except('image'));
         if ($request->hasFile('image')) {
             $file = $request->file('image');
             $ext = $file->getClientOriginalExtension();
@@ -49,27 +33,15 @@ class ProductController extends Controller
         }
         $product->save();
 
-        return response()->json('Produto adiconado com sucesso', 201);
+        return ApiResponse::created(
+            new ProductResource($product->load(['category', 'brand'])),
+            'Produto adicionado com sucesso.'
+        );
     }
 
-    public function update(Request $request, Product $product)
+    public function update(UpdateProductRequest $request, Product $product)
     {
-        $request->validate([
-            'name' => 'required',
-            'price' => 'required|numeric',
-            'category_id' => 'required|numeric',
-            'brand_id' => 'required|numeric',
-            'discount' => 'nullable|numeric',
-            'amount' => 'required|numeric',
-            'image' => 'nullable|image',
-        ]);
-
-        $product->name = $request->name;
-        $product->price = $request->price;
-        $product->category_id = $request->category_id;
-        $product->brand_id = $request->brand_id;
-        $product->discount = $request->discount;
-        $product->amount = $request->amount;
+        $product->fill($request->safe()->except('image'));
         if ($request->hasFile('image')) {
             $path = 'public/assets/uploads/product/' . $product->image;
             if (File::exists($path)) {
@@ -83,13 +55,16 @@ class ProductController extends Controller
         }
         $product->update();
 
-        return response()->json('Produto atualizado com sucesso');
+        return ApiResponse::success(
+            new ProductResource($product->load(['category', 'brand'])),
+            'Produto atualizado com sucesso.'
+        );
     }
 
     public function destroy(Product $product)
     {
         $product->delete();
 
-        return response()->json('Produto excluído com sucesso');
+        return ApiResponse::noContent();
     }
 }

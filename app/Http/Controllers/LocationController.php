@@ -3,47 +3,29 @@
 namespace App\Http\Controllers;
 
 use App\Models\Location;
-use Illuminate\Http\Request;
+use App\Http\Requests\StoreLocationRequest;
+use App\Http\Requests\UpdateLocationRequest;
+use App\Http\Resources\LocationResource;
+use App\Support\ApiResponse;
 use Illuminate\Support\Facades\Auth;
 class LocationController extends Controller
 {
-    public function store(Request $request)
+    public function store(StoreLocationRequest $request)
     {
-        $request->validate([
-            'street'=>'required',
-            'building'=>'required',
-            'area'=>'required',
-        ]);
-        
-        $location = new Location();
-        $location-> street = $request->street;
-        $location-> building = $request->building;
-        $location-> area = $request->area;
-        $location-> user_id = Auth::id();
-        $location-> save();
-        
+        $location = Location::create($request->validated() + ['user_id' => Auth::id()]);
 
-        return response()->json('Localização adicionada com sucesso', 201);
+        return ApiResponse::created(new LocationResource($location), 'Endereço adicionado com sucesso.');
     }
 
-    public function update(Request $request, Location $location)
+    public function update(UpdateLocationRequest $request, Location $location)
     {
-        $request->validate([
-            'street'=>'required',
-            'building'=>'required',
-            'area'=>'required',
-        ]);
-
         $location = Location::where('id', $location->id)
             ->where('user_id', Auth::id())
             ->firstOrFail();
 
-        $location->street = $request->street;
-        $location->building = $request->building;
-        $location->area = $request->area;
-        $location->update();
+        $location->update($request->validated());
 
-        return response()->json('Localização atualizada');
+        return ApiResponse::success(new LocationResource($location), 'Endereço atualizado com sucesso.');
 
     }
 
@@ -55,6 +37,6 @@ class LocationController extends Controller
 
         $location->delete();
 
-        return response()->json('Localização excluída com sucesso');
+        return ApiResponse::noContent();
     }
 }
