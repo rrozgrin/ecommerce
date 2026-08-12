@@ -36,7 +36,11 @@ class OrderController extends Controller
 
     public function show($id)
     {
-        $order = Order::find($id);
+        $order = Order::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->with('items.product', 'location')
+            ->firstOrFail();
+
         return response()->json($order, 200);
     }
 

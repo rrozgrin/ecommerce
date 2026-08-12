@@ -39,15 +39,16 @@ class LocationController extends Controller
             'area'=>'required',
         ]);
 
-        $location = Location::find($id);
-        if($location){
-            $location->street = $request->street;
-            $location->building = $request->building;
-            $location->area = $request->area;
-            $location->update();
-    
-            return response()->json('Localização atualizada');
-        } else return response()->json('Localização não encontrada');
+        $location = Location::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+
+        $location->street = $request->street;
+        $location->building = $request->building;
+        $location->area = $request->area;
+        $location->update();
+
+        return response()->json('Localização atualizada');
 
     }
 
