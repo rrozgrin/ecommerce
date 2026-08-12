@@ -107,9 +107,9 @@ class OrderController extends Controller
         return response()->json($order, 201);
     }
 
-    public function get_order_items($id)
+    public function getOrderItems(Order $order)
     {
-        $order_items = OrderItems::where('order_id', $id)->get();
+        $order_items = OrderItems::where('order_id', $order->id)->get();
         if ($order_items) {
             foreach ($order_items as $order_item) {
                 $product = Product::where('id', $order_item->product_id)->pluck('name');
@@ -119,9 +119,9 @@ class OrderController extends Controller
         } else return response()->json('Itens não localizados');
     }
 
-    public function get_user_orders($id)
+    public function getUserOrders($userId)
     {
-        $orders = Order::with('items')->where('user_id', $id)->get();
+        $orders = Order::with('items')->where('user_id', $userId)->get();
 
         if ($orders) {
             foreach ($orders as $order) {
@@ -135,12 +135,14 @@ class OrderController extends Controller
         } else return response()->json('Nenhuma compra encontrada para esse usuário');
     }
 
-    public function change_order_status($id, Request $request)
+    public function updateStatus(Request $request, Order $order)
     {
-        $order = Order::find($id);
-        if ($order) {
-            $order->update(['status' => $request->status]);
-            return response()->json('Status alterado com sucesso');
-        } else return response()->json('Compra não foi encontrada');
+        $validated = $request->validate([
+            'status' => 'required|in:Pendente,Saiu para entrega,Cancelado,Entregue',
+        ]);
+
+        $order->update($validated);
+
+        return response()->json('Status alterado com sucesso');
     }
 }

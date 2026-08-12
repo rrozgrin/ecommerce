@@ -15,13 +15,13 @@ class ApiAuthenticationTest extends TestCase
 
     public function test_orders_require_authentication(): void
     {
-        $this->getJson('/api/compras/index')
+        $this->getJson('/api/compras')
             ->assertUnauthorized();
     }
 
     public function test_addresses_require_authentication(): void
     {
-        $this->postJson('/api/enderecos/store', [
+        $this->postJson('/api/enderecos', [
             'street' => 'Rua Teste',
             'building' => '10',
             'area' => 'Centro',

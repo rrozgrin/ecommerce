@@ -4,11 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\File;
-use Symfony\Component\HttpFoundation\File\Exception\FileException;
 
-class ProdutcController extends Controller
+class ProductController extends Controller
 {
     public function index()
     {
@@ -18,12 +16,9 @@ class ProdutcController extends Controller
         } else return response()->json('Produtos não encontrados');
     }
 
-    public function show($id)
+    public function show(Product $product)
     {
-        $product = Product::find($id);
-        if ($product) {
-            return response()->json($product, 200);
-        } else return response()->json('Produto não encontrados');
+        return response()->json($product, 200);
     }
 
     public function store(Request $request)
@@ -57,7 +52,7 @@ class ProdutcController extends Controller
         return response()->json('Produto adiconado com sucesso', 201);
     }
 
-    public function update_product($id, Request $request)
+    public function update(Request $request, Product $product)
     {
         $request->validate([
             'name' => 'required',
@@ -69,37 +64,32 @@ class ProdutcController extends Controller
             'image' => 'nullable|image',
         ]);
 
-        $product = Product::find($id);
-        if ($product) {
-            $product->name = $request->name;
-            $product->price = $request->price;
-            $product->category_id = $request->category_id;
-            $product->brand_id = $request->brand_id;
-            $product->discount = $request->discount;
-            $product->amount = $request->amount;
-            if ($request->hasFile('image')) {
-                $path = 'public/assets/uploads/product/' . $product->image;
-                if (File::exists($path)) {
-                    File::delete($path);
-                }
-                $file = $request->file('image');
-                $ext = $file->getClientOriginalExtension();
-                $filename = time() . '.' . $ext;
-                $file->move('public/assets/uploads/product', $filename);
-                $product->image = $filename;
+        $product->name = $request->name;
+        $product->price = $request->price;
+        $product->category_id = $request->category_id;
+        $product->brand_id = $request->brand_id;
+        $product->discount = $request->discount;
+        $product->amount = $request->amount;
+        if ($request->hasFile('image')) {
+            $path = 'public/assets/uploads/product/' . $product->image;
+            if (File::exists($path)) {
+                File::delete($path);
             }
-            $product->update();
+            $file = $request->file('image');
+            $ext = $file->getClientOriginalExtension();
+            $filename = time() . '.' . $ext;
+            $file->move('public/assets/uploads/product', $filename);
+            $product->image = $filename;
+        }
+        $product->update();
 
-            return response()->json('Produto atualizado com sucesso', 201);
-        } else return response()->json('Produto não encontrado');
+        return response()->json('Produto atualizado com sucesso');
     }
 
-    public function delete_product($id)
+    public function destroy(Product $product)
     {
-        $product = Product::find($id);
-        if ($product) {
-            $product->delete();
-            return response()->json('Produto excluído com sucesso');
-        } else return response()->json('Produto não encontrado');
+        $product->delete();
+
+        return response()->json('Produto excluído com sucesso');
     }
 }

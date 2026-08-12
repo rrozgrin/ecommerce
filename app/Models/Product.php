@@ -20,7 +20,7 @@ class Product extends Model
         'amount',
         'image',
         'is_active',
-        'is_avaliable'
+        'is_available'
     ];
 
     public function category()

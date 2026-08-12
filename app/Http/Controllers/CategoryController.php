@@ -3,11 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
-use Exception;
 use Illuminate\Support\Facades\File;
 use Illuminate\Http\Request;
-
-use function PHPUnit\Framework\fileExists;
+use Illuminate\Validation\Rule;
 
 class CategoryController extends Controller
 {
@@ -33,29 +31,21 @@ class CategoryController extends Controller
      */
     public function store(Request $request)
     {
-        try {
-            $validated = $request->validate([
-                'name' => 'required|unique:categories,name'
-            ]);
-            $category = new Category();
-            $category->name = $request->name;
-            $category->save();
-            return response()->json('Categoria adicionada com sucesso', 201);
-        } catch (Exception $e) {
-            return response()->json($e, 500);
-        }
+        $validated = $request->validate([
+            'name' => 'required|unique:categories,name',
+        ]);
+
+        Category::create($validated);
+
+        return response()->json('Categoria adicionada com sucesso', 201);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Category $id)
+    public function show(Category $category)
     {
-        $category = Category::find($id);
-
-        if ($category) {
-            return response()->json($category, 200);
-        } else return   response()->json('Categoria não encontrada');
+        return response()->json($category, 200);
     }
     /**
      * Show the form for editing the specified resource.
@@ -68,49 +58,37 @@ class CategoryController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update_category(Request $request, $id)
+    public function update(Request $request, Category $category)
     {
-        try {
-            $validated = $request->validate([
-                'name' => 'required|unique:categories,name',
-                'image' => 'nullable|image'
-            ]);
-            $category = Category::find($id);
-            if ($request->hasFile('image')) {
-                $path = 'public/assets/uploads/category/' . $category->image;
-                if (File::exists($path)) {
-                    File::delete($path);
-                }
-                $file = $request->file('image');
-                $ext = $file->getClientOriginalExtension();
-                $filename = time() . '.' . $ext;
+        $validated = $request->validate([
+            'name' => ['required', Rule::unique('categories', 'name')->ignore($category)],
+            'image' => 'nullable|image',
+        ]);
 
-                try {
-                    $file->move('public/assets/uploads/category', $filename);
-                } catch (Exception $e) {
-                    dd($e);
-                }
-                $category->image = $filename;
+        if ($request->hasFile('image')) {
+            $path = 'public/assets/uploads/category/' . $category->image;
+            if (File::exists($path)) {
+                File::delete($path);
             }
+            $file = $request->file('image');
+            $filename = time() . '.' . $file->getClientOriginalExtension();
+            $file->move('public/assets/uploads/category', $filename);
+            $category->image = $filename;
+        }
 
-            $category->name = $request->name;
-            $category->update();
-            return response()->json('Categoria atualizada com sucesso', 200);
-            
-        } catch (Exception $e) {
-            return response()->json($e, 500);
-        };
+        $category->name = $validated['name'];
+        $category->update();
+
+        return response()->json('Categoria atualizada com sucesso');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function delete_category($id)
+    public function destroy(Category $category)
     {
-        $category = Category::find($id);
-        if ($category) {
-            $category->delete();
-            return response()->json('Categoria excluída com sucesso');
-        } else return response()->json('Categoria não encontrada');
+        $category->delete();
+
+        return response()->json('Categoria excluída com sucesso');
     }
 }

@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Brand;
-use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class BrandController extends Controller
 {
@@ -30,29 +30,21 @@ class BrandController extends Controller
      */
     public function store(Request $request)
     {
-        try {
-            $validated = $request->validate([
-                'name' => 'required|unique:brands,name'
-            ]);
-            $brand = new Brand();
-            $brand->name = $request->name;
-            $brand->save();
-            return response()->json('Marca adicionada com sucesso', 201);
-        } catch (Exception $e) {
-            return response()->json($e, 500);
-        }
+        $validated = $request->validate([
+            'name' => 'required|unique:brands,name',
+        ]);
+
+        Brand::create($validated);
+
+        return response()->json('Marca adicionada com sucesso', 201);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Brand $id)
+    public function show(Brand $brand)
     {
-        $brand = Brand::find($id);
-
-        if ($brand) {
-            return response()->json($brand, 200);
-        } else return   response()->json('Marca não encontrada');
+        return response()->json($brand, 200);
     }
     /**
      * Show the form for editing the specified resource.
@@ -65,29 +57,24 @@ class BrandController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update_brand(Request $request, $id)
+    public function update(Request $request, Brand $brand)
     {
-        try {
-            $validated = $request->validate([
-                'name' => 'required|unique:brands,name'
-            ]);
-            $brand = Brand::where('id', $id)->update(['name' => $request->name]);
-            $brand->update();
-            return response()->json('Marca atualizada com sucesso', 200);
-        } catch (Exception $e) {
-            return response()->json($e, 500);
-        };
+        $validated = $request->validate([
+            'name' => ['required', Rule::unique('brands', 'name')->ignore($brand)],
+        ]);
+
+        $brand->update($validated);
+
+        return response()->json('Marca atualizada com sucesso');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function delete_brand($id)
+    public function destroy(Brand $brand)
     {
-        $brand = Brand::find($id);
-        if($brand){
-            $brand->delete();
-            return response()->json('Marca excluída com sucesso');
-        } else return response()->json('Marca não encontrada');
+        $brand->delete();
+
+        return response()->json('Marca excluída com sucesso');
     }
 }

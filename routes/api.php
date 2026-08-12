@@ -5,9 +5,7 @@ use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\OrderController;
-use App\Http\Controllers\ProdutcController;
-use App\Models\Category;
-use Illuminate\Http\Request;
+use App\Http\Controllers\ProductController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -21,84 +19,49 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::group([
-    'prefix' => 'auth',
-    'middleware' => 'api',
-], function ($routes) {
+Route::apiResource('produtos', ProductController::class)
+    ->parameters(['produtos' => 'product'])
+    ->only(['index', 'show']);
+
+Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/logout', [AuthController::class, 'logout']);
-    Route::post('/refresh', [AuthController::class, 'refresh']);
-    Route::get('/user-profile', [AuthController::class, 'userProfile']);
 });
 
-// Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-//     return $request->user();
-// });
-
-//brand routes
-Route::group(['prefix' => 'marcas'], function ($routes) {
-    Route::controller(BrandController::class)->group(function () {
-        Route::middleware(['auth:api', 'is_admin'])->group(function () {
-            Route::get('index', 'index');
-            Route::get('show/{id}', 'show');
-            Route::post('store', 'store');
-            Route::put('update_brand/{id}', 'update_brand');
-            Route::delete('delete_brand/{id}', 'delete_brand');
-        });
+Route::middleware('auth:api')->group(function () {
+    Route::prefix('auth')->group(function () {
+        Route::post('/logout', [AuthController::class, 'logout']);
+        Route::post('/refresh', [AuthController::class, 'refresh']);
+        Route::get('/user-profile', [AuthController::class, 'userProfile']);
     });
-});
 
-//categories routes
-Route::group(['prefix' => 'categorias'], function ($routes) {
-    Route::controller(CategoryController::class)->group(function () {
-        Route::middleware(['auth:api', 'is_admin'])->group(function () {
-            Route::get('index', 'index');
-            Route::get('show/{id}', 'show');
-            Route::post('store', 'store');
-            Route::put('update_category/{id}', 'update_category');
-            Route::delete('delete_category/{id}', 'delete_category');
-        });
+    Route::apiResource('enderecos', LocationController::class)
+        ->parameters(['enderecos' => 'location'])
+        ->only(['store', 'update', 'destroy']);
+
+    Route::prefix('compras')->controller(OrderController::class)->group(function () {
+        Route::get('/', 'index');
+        Route::get('/{order}', 'show');
+        Route::post('/', 'store');
     });
-});
 
-//locations routes
-Route::group(['prefix' => 'enderecos'], function ($routes) {
-    Route::controller(LocationController::class)->group(function () {
-        Route::middleware('auth:api')->group(function () {
-            Route::post('store', 'store');
-            Route::put('update_location/{id}', 'update_location');
-            Route::delete('delete_location/{id}', 'delete_location');
-        });
-    });
-});
+    Route::middleware('is_admin')->group(function () {
+        Route::apiResource('marcas', BrandController::class)
+            ->parameters(['marcas' => 'brand'])
+            ->only(['index', 'show', 'store', 'update', 'destroy']);
 
-//products routes
-Route::group(['prefix' => 'produtos'], function ($routes) {
-    Route::controller(ProdutcController::class)->group(function () {
-        Route::get('index', 'index');
-        Route::get('show/{id}', 'show');
-        Route::middleware(['auth:api', 'is_admin'])->group(function () {
-            Route::post('store', 'store');
-            Route::put('update_product/{id}', 'update_product');
-            Route::delete('delete_product/{id}', 'delete_product');
-        });
-    });
-});
+        Route::apiResource('categorias', CategoryController::class)
+            ->parameters(['categorias' => 'category'])
+            ->only(['index', 'show', 'store', 'update', 'destroy']);
 
+        Route::apiResource('produtos', ProductController::class)
+            ->parameters(['produtos' => 'product'])
+            ->only(['store', 'update', 'destroy']);
 
-//order routes
-Route::group(['prefix' => 'compras'], function ($routes) {
-    Route::controller(OrderController::class)->group(function () {
-        Route::middleware('auth:api')->group(function () {
-            Route::get('index', 'index');
-            Route::get('show/{id}', 'show');
-            Route::post('store', 'store');
-            Route::middleware('is_admin')->group(function () {
-                Route::get('get_order_items/{id}', 'get_order_items');
-                Route::get('get_user_orders/{id}', 'get_user_orders');
-                Route::post('change_order_status/{id}', 'change_order_status');
-            });
+        Route::prefix('compras')->controller(OrderController::class)->group(function () {
+            Route::get('/usuarios/{userId}', 'getUserOrders');
+            Route::get('/{order}/itens', 'getOrderItems');
+            Route::patch('/{order}/status', 'updateStatus');
         });
     });
 });

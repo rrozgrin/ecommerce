@@ -5,11 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Location;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Locale;
-
-
-use function PHPUnit\Framework\returnSelf;
-
 class LocationController extends Controller
 {
     public function store(Request $request)
@@ -31,7 +26,7 @@ class LocationController extends Controller
         return response()->json('Localização adicionada com sucesso', 201);
     }
 
-    public function update_location(Request $request, $id)
+    public function update(Request $request, Location $location)
     {
         $request->validate([
             'street'=>'required',
@@ -39,7 +34,7 @@ class LocationController extends Controller
             'area'=>'required',
         ]);
 
-        $location = Location::where('id', $id)
+        $location = Location::where('id', $location->id)
             ->where('user_id', Auth::id())
             ->firstOrFail();
 
@@ -52,16 +47,14 @@ class LocationController extends Controller
 
     }
 
-    public function delete_location($id)
+    public function destroy(Location $location)
     {
-        $location = Location::where('id', $id)
+        $location = Location::where('id', $location->id)
             ->where('user_id', Auth::id())
-            ->first();
-        if($location){
-            $location->delete();
-            return response()->json('Localização excluída com sucesso');
-        }
-        else return response()->json('Localização não encontrada');
-        
+            ->firstOrFail();
+
+        $location->delete();
+
+        return response()->json('Localização excluída com sucesso');
     }
 }

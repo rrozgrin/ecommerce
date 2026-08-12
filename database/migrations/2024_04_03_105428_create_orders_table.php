@@ -16,7 +16,7 @@ return new class extends Migration
             $table->enum('status',['Pendente','Saiu para entrega', 'Cancelado','Entregue'])->default('Pendente');
             $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('location_id');
-            $table->double('total_price');
+            $table->decimal('total_price', 10, 2);
             $table->string('date_of_delivery');
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
